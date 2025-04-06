@@ -1,7 +1,8 @@
-let userConfig = undefined
+let userConfig = undefined;
+
 try {
   // try to import ESM first
-  userConfig = await import('./v0-user-next.config.mjs')
+  userConfig = await import("./v0-user-next.config.mjs");
 } catch (e) {
   try {
     // fallback to CJS import
@@ -26,26 +27,40 @@ const nextConfig = {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
+    // Add updated key if needed in your user config
+    // serverExternalPackages: ["some-package"],
   },
-}
+};
 
+// Merge user config into base config
 if (userConfig) {
-  // ESM imports will have a "default" property
-  const config = userConfig.default || userConfig
+  const config = userConfig.default || userConfig;
 
   for (const key in config) {
     if (
-      typeof nextConfig[key] === 'object' &&
+      typeof nextConfig[key] === "object" &&
       !Array.isArray(nextConfig[key])
     ) {
       nextConfig[key] = {
         ...nextConfig[key],
         ...config[key],
-      }
+      };
     } else {
-      nextConfig[key] = config[key]
+      nextConfig[key] = config[key];
     }
+  }
+
+  // Fix deprecated keys if userConfig has them
+  if (config.experimental?.serverComponentsExternalPackages) {
+    nextConfig.experimental.serverExternalPackages =
+      config.experimental.serverComponentsExternalPackages;
+    delete nextConfig.experimental.serverComponentsExternalPackages;
+  }
+
+  if ("swcMinify" in config) {
+    console.warn("`swcMinify` is deprecated and will be ignored.");
+    delete nextConfig.swcMinify;
   }
 }
 
-export default nextConfig
+export default nextConfig;
